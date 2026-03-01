@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// 初始化 Elasticsearch 客户端
-	esClient, err := repository.NewESClient(cfg.Elasticsearch.Host)
+	esClient, err := repository.NewESClient(cfg.Elasticsearch.Hosts)
 	if err != nil {
 		log.Fatalf("Failed to create ES client: %v", err)
 	}
@@ -31,7 +31,7 @@ func main() {
 
 	// 初始化 API 路由
 	router := gin.Default()
-	api.SetupRoutes(router, searchService)
+	api.SetupRoutes(router, searchService, cfg.RateLimit)
 
 	// 启动服务器
 	log.Printf("Server starting on %s", cfg.Server.Addr)

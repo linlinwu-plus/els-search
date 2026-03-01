@@ -7,6 +7,7 @@ toolchain go1.23.2
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.11.0
 	github.com/gin-gonic/gin v1.11.0
+	github.com/juju/ratelimit v1.0.2
 	gopkg.in/yaml.v3 v3.0.1
 )
 

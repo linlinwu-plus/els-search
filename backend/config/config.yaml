@@ -1,5 +1,13 @@
 server:
-  addr: "localhost:8080"
+  addr: "127.0.0.1:8080"
 
 elasticsearch:
-  host: "http://localhost:9200"
+  hosts:
+    - "http://localhost:9200"
+
+rate_limit:
+  global:
+    rps: 100
+  search:
+    rps: 50
+    burst: 100

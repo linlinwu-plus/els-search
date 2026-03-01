@@ -1,6 +1,7 @@
 package api
 
 import (
+	"backend/config"
 	"backend/service"
 	"net/http"
 	"strconv"
@@ -10,9 +11,26 @@ import (
 )
 
 // SetupRoutes 设置 API 路由
-func SetupRoutes(router *gin.Engine, searchService service.SearchService) {
-	// 搜索接口
-	router.GET("/api/search", func(c *gin.Context) {
+func SetupRoutes(router *gin.Engine, searchService service.SearchService, rateLimit config.RateLimitConfig) {
+	// CORS 中间件
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	})
+
+	// 全局流量控制
+	router.Use(RateLimiter(rateLimit.Global.RPS))
+
+	// 搜索接口流量控制
+	router.GET("/api/search", BurstRateLimiter(rateLimit.Search.RPS, rateLimit.Search.Burst), func(c *gin.Context) {
 		// 获取查询参数
 		index := c.Query("index")
 		query := c.Query("q")

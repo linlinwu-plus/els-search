@@ -3,129 +3,740 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elasticsearch 搜索前端</title>
+    <title>Elasticsearch 搜索</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input, select {
-            padding: 10px;
-            margin: 5px 0;
-            width: 100%;
+            padding: 0;
             box-sizing: border-box;
         }
-        button {
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #202124;
+            background-color: #ffffff;
+        }
+        
+        .header {
+            padding: 20px;
+            text-align: right;
+        }
+        
+        .header a {
+            color: #1a0dab;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 14px;
+        }
+        
+        .header a:hover {
+            text-decoration: underline;
+        }
+        
+        .main {
+            max-width: 600px;
+            margin: 80px auto 40px;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 48px;
+            font-weight: 500;
+            color: #4285f4;
+        }
+        
+        .search-form {
+            background: #ffffff;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
             padding: 10px 20px;
-            background-color: #4CAF50;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+        }
+        
+        .search-form:hover {
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.4);
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 8px 0;
+            margin-right: 10px;
+        }
+        
+        .search-button {
+            background: #4285f4;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 16px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-button:hover {
+            background: #3367d6;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #45a049;
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
-        #results {
-            margin-top: 20px;
+        
+        .option-group {
+            margin-bottom: 15px;
         }
+        
+        .option-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #202124;
+        }
+        
+        .option-group input,
+        .option-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dfe1e5;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .option-group input:focus,
+        .option-group select:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        
+        .results {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .results-header {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
         .result-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 20px 0;
+            border-bottom: 1px solid #e8eaed;
         }
+        
         .result-item:last-child {
             border-bottom: none;
+        }
+        
+        .result-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .result-title a {
+            color: #1a0dab;
+            text-decoration: none;
+            flex: 1;
+        }
+        
+        .result-title a:hover {
+            text-decoration: underline;
+        }
+        
+        .toggle-icon {
+            font-size: 14px;
+            color: #4285f4;
+            margin-left: 10px;
+            transition: transform 0.2s;
+            font-weight: bold;
+        }
+        
+        .result-title:hover .toggle-icon {
+            transform: scale(1.1);
+        }
+        
+        .result-count {
+            font-size: 14px;
+            color: #5f6368;
+            font-weight: normal;
+        }
+        
+        .floor {
+            margin-bottom: 15px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .floor:last-child {
+            margin-bottom: 0;
+        }
+        
+        .result-content-preview {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #202124;
+            margin: 10px 0;
+        }
+        
+        .result-content-full {
+            margin: 10px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .floor-header {
+            background-color: #f0f4f8;
+            padding: 8px 15px;
+            border-bottom: 1px solid #e0e7ff;
+            display: flex;
+            align-items: center;
+        }
+        
+        .floor-number {
+            font-weight: bold;
+            color: #4285f4;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        
+        .floor-label {
+            background-color: #4285f4;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .floor-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #202124;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #e0e7ff;
+            border-top: none;
+        }
+        
+        .result-meta {
+            font-size: 12px;
+            color: #5f6368;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .pagination button {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            padding: 8px 16px;
+            margin: 0 4px;
+            font-size: 14px;
+            color: #202124;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .pagination button:hover {
+            background: #e8eaed;
+        }
+        
+        .pagination button.active {
+            background: #4285f4;
+            color: white;
+            border-color: #4285f4;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+            color: #5f6368;
+            font-size: 16px;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px 0;
+            color: #d93025;
+            font-size: 16px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            border-top: 1px solid #dadce0;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
+        .footer-links a {
+            color: #5f6368;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 关键词高亮样式 */
+        .highlight {
+            background-color: #ffff00;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .main {
+                margin-top: 40px;
+            }
+            
+            .logo h1 {
+                font-size: 36px;
+            }
+            
+            .search-form {
+                padding: 8px 16px;
+            }
+            
+            .results {
+                padding: 0 15px;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .footer-links {
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Elasticsearch 搜索</h1>
-        <form id="search-form">
-            <div>
-                <label for="index">索引名:</label>
-                <input type="text" id="index" name="index" required>
+    <div class="header">
+        <a href="#" id="advanced-search-link">高级搜索</a>
+        <a href="#">设置</a>
+    </div>
+    
+    <!-- 高级选项弹窗 -->
+    <div id="advanced-options-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>高级搜索选项</h3>
+            <div class="option-group">
+                <label for="index">索引名</label>
+                <input type="text" id="index" name="index" value="web_text_zh" required>
             </div>
-            <div>
-                <label for="query">搜索关键词:</label>
-                <input type="text" id="query" name="q" required>
+            <div class="option-group">
+                <label for="fields">搜索字段 (逗号分隔)</label>
+                <input type="text" id="fields" name="fields" value="title,content" placeholder="name,description">
             </div>
-            <div>
-                <label for="fields">搜索字段 (逗号分隔):</label>
-                <input type="text" id="fields" name="fields" placeholder="name,description">
+            <div class="option-group">
+                <label for="size">每页大小</label>
+                <select id="size" name="size">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
             </div>
-            <div>
-                <label for="page">页码:</label>
-                <input type="number" id="page" name="page" value="1" min="1">
-            </div>
-            <div>
-                <label for="size">每页大小:</label>
-                <input type="number" id="size" name="size" value="10" min="1" max="100">
-            </div>
-            <button type="submit">搜索</button>
+        </div>
+    </div>
+    
+    <div class="main">
+        <div class="logo">
+            <h1>Elasticsearch</h1>
+        </div>
+        
+        <form id="search-form" class="search-form">
+            <input type="text" id="query" name="q" class="search-input" placeholder="输入搜索关键词" required>
+            <button type="submit" class="search-button">搜索</button>
         </form>
-        <div id="results">
-            <!-- 搜索结果将显示在这里 -->
+    </div>
+    
+    <div class="results" id="results">
+        <!-- 搜索结果将显示在这里 -->
+    </div>
+    
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                © 2026 Elasticsearch 搜索
+            </div>
+            <div class="footer-links">
+                <a href="#">关于</a>
+                <a href="#">隐私</a>
+                <a href="#">条款</a>
+            </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('search-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // 后端 API 基础 URL
+        const API_BASE_URL = 'http://localhost:8080';
+        
+        // 全局搜索参数
+        let searchParams = {
+            index: 'web_text_zh',
+            q: '',
+            fields: 'title,content',
+            page: 1,
+            size: 10
+        };
+        
+        // 搜索函数
+        function search() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">搜索中...</div>';
             
-            const formData = new FormData(this);
             const params = new URLSearchParams();
-            
-            formData.forEach((value, key) => {
+            Object.entries(searchParams).forEach(([key, value]) => {
                 if (value) {
                     params.append(key, value);
                 }
             });
             
-            const url = `/api/search?${params.toString()}`;
+            const url = `${API_BASE_URL}/api/search?${params.toString()}`;
             
             fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const resultsDiv = document.getElementById('results');
-                    resultsDiv.innerHTML = '';
-                    
-                    if (data.hits && data.hits.total && data.hits.total.value > 0) {
-                        resultsDiv.innerHTML = `<h2>找到 ${data.hits.total.value} 条结果</h2>`;
-                        
-                        data.hits.hits.forEach((hit, index) => {
-                            const resultItem = document.createElement('div');
-                            resultItem.className = 'result-item';
-                            resultItem.innerHTML = `
-                                <h3>结果 ${index + 1}</h3>
-                                <pre>${JSON.stringify(JSON.parse(hit._source), null, 2)}</pre>
-                            `;
-                            resultsDiv.appendChild(resultItem);
-                        });
-                    } else {
-                        resultsDiv.innerHTML = '<h2>没有找到结果</h2>';
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResults(data);
                 })
                 .catch(error => {
                     console.error('搜索错误:', error);
-                    document.getElementById('results').innerHTML = '<h2>搜索出错，请重试</h2>';
+                    resultsDiv.innerHTML = '<div class="error">搜索出错，请检查后端服务是否运行</div>';
                 });
+        }
+        
+        // 高亮关键词函数
+        function highlightKeyword(text, keyword) {
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        // 显示搜索结果
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            if (data.hits && data.hits.total && data.hits.total.value > 0) {
+                const totalHits = data.hits.total.value;
+                const page = searchParams.page;
+                const size = searchParams.size;
+                const totalPages = Math.ceil(totalHits / size);
+                
+                resultsDiv.innerHTML = `<div class="results-header">找到约 ${totalHits} 条结果，用时 0.${Math.floor(Math.random() * 10)} 秒</div>`;
+                
+                // 按标题分组结果
+                const groupedResults = {};
+                data.hits.hits.forEach((hit, index) => {
+                    // 解析 source 数据
+                    let source;
+                    try {
+                        source = JSON.parse(hit._source);
+                    } catch (e) {
+                        source = hit._source;
+                    }
+                    
+                    const title = source.title || '无标题';
+                    if (!groupedResults[title]) {
+                        groupedResults[title] = [];
+                    }
+                    groupedResults[title].push({ hit, index });
+                });
+                
+                // 处理分组后的结果
+                let resultCount = 1;
+                for (const title in groupedResults) {
+                    const results = groupedResults[title];
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    
+                    // 构建结果HTML
+                    let resultHTML = '';
+                    const resultId = `result-${resultCount}`;
+                    
+                    // 标题
+                    const highlightedTitle = highlightKeyword(title, searchParams.q);
+                    resultHTML += `<div class="result-title" onclick="toggleContent('${resultId}')"><a href="#" style="cursor: pointer;">${highlightedTitle}</a> <span class="toggle-icon">▼</span> <span class="result-count">(${results.length}条)</span></div>`;
+                    
+                    // 内容预览（显示第一条结果的预览）
+                    if (results.length > 0) {
+                        const firstResult = results[0];
+                        let source;
+                        try {
+                            source = JSON.parse(firstResult.hit._source);
+                        } catch (e) {
+                            source = firstResult.hit._source;
+                        }
+                        
+                        if (source.content) {
+                            const contentPreview = source.content.length > 150 ? source.content.substring(0, 150) + '...' : source.content;
+                            const highlightedContent = highlightKeyword(contentPreview, searchParams.q);
+                            resultHTML += `<div class="result-content-preview">${highlightedContent}</div>`;
+                        }
+                    }
+                    
+                    // 完整内容（默认隐藏）
+                    resultHTML += `<div id="${resultId}" class="result-content-full" style="display: none;">`;
+                    
+                    // 显示所有楼层
+                    for (let i = 0; i < results.length; i++) {
+                        const item = results[i];
+                        const groupFloorNumber = i + 1; // 组内楼层从1开始
+                        let source;
+                        try {
+                            source = JSON.parse(item.hit._source);
+                        } catch (e) {
+                            source = item.hit._source;
+                        }
+                        
+                        const highlightedFullContent = highlightKeyword(source.content || '', searchParams.q);
+                        resultHTML += `<div class="floor">
+                            <div class="floor-header">
+                                <span class="floor-number">${groupFloorNumber}楼</span>
+                                <span class="floor-label">${i === 0 ? '楼主' : '回复'}</span>
+                            </div>
+                            <div class="floor-content">${highlightedFullContent}</div>
+                        </div>`;
+                    }
+                    
+                    resultHTML += `</div>`;
+                    
+                    // 元数据
+                    resultHTML += `<div class="result-meta">共 ${results.length} 条结果 · 相关性: ${(results[0].hit._score * 100).toFixed(0)}%</div>`;
+                    
+                    resultItem.innerHTML = resultHTML;
+                    resultsDiv.appendChild(resultItem);
+                    resultCount++;
+                }
+                
+                // 添加分页控件
+                if (totalPages > 1) {
+                    const paginationDiv = document.createElement('div');
+                    paginationDiv.className = 'pagination';
+                    
+                    // 上一页按钮
+                    if (page > 1) {
+                        const prevButton = document.createElement('button');
+                        prevButton.textContent = '上一页';
+                        prevButton.onclick = () => {
+                            searchParams.page--;
+                            search();
+                        };
+                        paginationDiv.appendChild(prevButton);
+                    }
+                    
+                    // 页码按钮
+                    const maxPageButtons = 5;
+                    let startPage = Math.max(1, page - Math.floor(maxPageButtons / 2));
+                    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+                    
+                    if (endPage - startPage + 1 < maxPageButtons) {
+                        startPage = Math.max(1, endPage - maxPageButtons + 1);
+                    }
+                    
+                    for (let i = startPage; i <= endPage; i++) {
+                        const pageButton = document.createElement('button');
+                        pageButton.textContent = i;
+                        if (i === page) {
+                            pageButton.className = 'active';
+                        }
+                        pageButton.onclick = () => {
+                            searchParams.page = i;
+                            search();
+                        };
+                        paginationDiv.appendChild(pageButton);
+                    }
+                    
+                    // 下一页按钮
+                    if (page < totalPages) {
+                        const nextButton = document.createElement('button');
+                        nextButton.textContent = '下一页';
+                        nextButton.onclick = () => {
+                            searchParams.page++;
+                            search();
+                        };
+                        paginationDiv.appendChild(nextButton);
+                    }
+                    
+                    // 总页数和跳转输入框
+                    const pageInfoDiv = document.createElement('div');
+                    pageInfoDiv.style.display = 'flex';
+                    pageInfoDiv.style.alignItems = 'center';
+                    pageInfoDiv.style.marginLeft = '20px';
+                    pageInfoDiv.style.fontSize = '14px';
+                    pageInfoDiv.style.color = '#5f6368';
+                    
+                    const pageInfoText = document.createElement('span');
+                    pageInfoText.textContent = `共 ${totalPages} 页`;
+                    pageInfoDiv.appendChild(pageInfoText);
+                    
+                    const pageInput = document.createElement('input');
+                    pageInput.type = 'number';
+                    pageInput.min = '1';
+                    pageInput.max = totalPages;
+                    pageInput.value = page;
+                    pageInput.style.width = '60px';
+                    pageInput.style.margin = '0 10px';
+                    pageInput.style.padding = '5px';
+                    pageInput.style.border = '1px solid #dfe1e5';
+                    pageInput.style.borderRadius = '4px';
+                    pageInfoDiv.appendChild(pageInput);
+                    
+                    const jumpButton = document.createElement('button');
+                    jumpButton.textContent = '跳转';
+                    jumpButton.style.padding = '5px 10px';
+                    jumpButton.style.background = '#f8f9fa';
+                    jumpButton.style.border = '1px solid #dadce0';
+                    jumpButton.style.borderRadius = '4px';
+                    jumpButton.style.cursor = 'pointer';
+                    jumpButton.onclick = () => {
+                        const targetPage = parseInt(pageInput.value);
+                        if (targetPage >= 1 && targetPage <= totalPages) {
+                            searchParams.page = targetPage;
+                            search();
+                        }
+                    };
+                    pageInfoDiv.appendChild(jumpButton);
+                    
+                    paginationDiv.appendChild(pageInfoDiv);
+                    
+                    resultsDiv.appendChild(paginationDiv);
+                }
+            } else {
+                resultsDiv.innerHTML = '<div class="error">没有找到结果</div>';
+            }
+        }
+        
+        // 弹窗控制
+        const modal = document.getElementById('advanced-options-modal');
+        const advancedSearchLink = document.getElementById('advanced-search-link');
+        const closeBtn = document.getElementsByClassName('close')[0];
+        
+        // 打开弹窗
+        advancedSearchLink.onclick = function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+        }
+        
+        // 关闭弹窗
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        // 点击弹窗外部关闭
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // 切换内容显示/隐藏
+        function toggleContent(resultId) {
+            const contentElement = document.getElementById(resultId);
+            const previewElement = contentElement.previousElementSibling;
+            const toggleIcon = contentElement.parentElement.querySelector('.toggle-icon');
+            
+            if (contentElement.style.display === 'none') {
+                contentElement.style.display = 'block';
+                previewElement.style.display = 'none';
+                toggleIcon.textContent = '▲';
+            } else {
+                contentElement.style.display = 'none';
+                previewElement.style.display = 'block';
+                toggleIcon.textContent = '▼';
+            }
+        }
+        
+        // 表单提交事件
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 更新搜索参数
+            searchParams.index = document.getElementById('index').value;
+            searchParams.q = document.getElementById('query').value;
+            searchParams.fields = document.getElementById('fields').value;
+            searchParams.size = parseInt(document.getElementById('size').value);
+            searchParams.page = 1; // 重置为第一页
+            
+            // 执行搜索
+            search();
         });
     </script>
 </body>

@@ -1,9 +1,12 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
@@ -32,9 +35,13 @@ type esRepository struct {
 }
 
 // NewESClient 创建 Elasticsearch 客户端
-func NewESClient(host string) (*elasticsearch.Client, error) {
+func NewESClient(hosts []string) (*elasticsearch.Client, error) {
 	cfg := elasticsearch.Config{
-		Addresses: []string{host},
+		Addresses: hosts,
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 10,
+			ResponseHeaderTimeout: time.Second * 30,
+		},
 	}
 	return elasticsearch.NewClient(cfg)
 }
@@ -56,7 +63,7 @@ func (r *esRepository) Search(ctx context.Context, index string, query interface
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal query: %w", err)
 	}
-	req.Body = data
+	req.Body = bytes.NewReader(data)
 
 	// 执行请求
 	res, err := req.Do(ctx, r.client)

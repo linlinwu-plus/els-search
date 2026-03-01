@@ -48,6 +48,28 @@ els-search/
 - **分层架构**：各层职责明确，边界清晰
 - **依赖注入**：通过构造函数注入依赖，便于测试和替换
 
+## 流量控制
+
+本项目实现了基于令牌桶算法的流量控制功能，可以有效防止系统过载。
+
+### 流量控制配置
+
+在 `config/config.yaml` 文件中配置流量控制参数：
+
+- `rate_limit.global.rps`：全局每秒最大请求数
+- `rate_limit.search.rps`：搜索接口每秒最大请求数
+- `rate_limit.search.burst`：搜索接口突发请求数
+
+### 流量控制中间件
+
+- **RateLimiter**：基本的令牌桶限流中间件
+- **BurstRateLimiter**：支持突发流量的令牌桶限流中间件
+- **TimeWindowRateLimiter**：时间窗口限流中间件
+
+### 响应状态码
+
+当请求超过限流阈值时，系统会返回 `429 Too Many Requests` 状态码，并在响应体中包含重试建议。
+
 ## 安装和运行
 
 ### 1. 安装依赖
@@ -65,15 +87,79 @@ server:
   addr: "localhost:8080"
 
 elasticsearch:
-  host: "http://localhost:9200"
+  hosts:
+    - "http://localhost:9200"
+    - "http://localhost:9201"
+    - "http://localhost:9202"
+
+rate_limit:
+  global:
+    rps: 100  # 全局每秒最大请求数
+  search:
+    rps: 50   # 搜索接口每秒最大请求数
+    burst: 100 # 搜索接口突发请求数
 ```
 
 ### 3. 运行应用
+
+#### 3.1 单实例运行
 
 ```bash
 cd backend
 go run main.go
 ```
+
+#### 3.2 多实例运行（负载均衡）
+
+1. 复制配置文件并修改端口：
+
+```bash
+cd backend
+cp config/config.yaml config/config_8081.yaml
+cp config/config.yaml config/config_8082.yaml
+```
+
+编辑 `config/config_8081.yaml` 文件，将端口改为 8081：
+
+```yaml
+server:
+  addr: "localhost:8081"
+```
+
+编辑 `config/config_8082.yaml` 文件，将端口改为 8082：
+
+```yaml
+server:
+  addr: "localhost:8082"
+```
+
+2. 启动多个应用实例：
+
+```bash
+# 终端 1
+cd backend
+CONFIG_FILE=config/config.yaml go run main.go
+
+# 终端 2
+cd backend
+CONFIG_FILE=config/config_8081.yaml go run main.go
+
+# 终端 3
+cd backend
+CONFIG_FILE=config/config_8082.yaml go run main.go
+```
+
+3. 配置 Nginx 负载均衡：
+
+编辑项目根目录下的 `nginx.conf` 文件，然后启动 Nginx：
+
+```bash
+nginx -c E:/code/T5/els-search/nginx.conf
+```
+
+4. 访问应用：
+
+通过 Nginx 访问应用：`http://localhost/front/index.html`
 
 ## API 接口
 
