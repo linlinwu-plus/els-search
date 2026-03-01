@@ -1,7 +1,9 @@
 package main
 
 import (
+	"backend/analytics"
 	"backend/api"
+	"backend/cache"
 	"backend/config"
 	"backend/repository"
 	"backend/service"
@@ -26,8 +28,23 @@ func main() {
 	// 初始化仓库
 	esRepo := repository.NewESRepository(esClient)
 
+	// 初始化缓存
+	redisCache := cache.NewRedisCache(
+		cfg.Redis.Addr,
+		cfg.Redis.Password,
+		cfg.Redis.DB,
+		cfg.Redis.TTL,
+	)
+
+	// 初始化分析服务
+	analyticsService := analytics.NewRedisAnalytics(
+		cfg.Redis.Addr,
+		cfg.Redis.Password,
+		cfg.Redis.DB,
+	)
+
 	// 初始化服务
-	searchService := service.NewSearchService(esRepo)
+	searchService := service.NewSearchService(esRepo, redisCache, analyticsService)
 
 	// 初始化 API 路由
 	router := gin.Default()

@@ -81,34 +81,62 @@ func ImportData(client *elasticsearch.Client, index string, filePath string) err
 	return nil
 }
 
-// createIndexIfNotExists 创建索引（如果不存在）
+// createIndexIfNotExists 创建索引（如果不存在）并设置优化的映射
 func createIndexIfNotExists(client *elasticsearch.Client, index string) error {
-	// 检查索引是否存在
-	req := esapi.IndicesExistsRequest{
-		Index: []string{index},
+	// 优化的映射结构
+	mapping := map[string]interface{}{
+		"properties": map[string]interface{}{
+			"title": map[string]interface{}{
+				"type":     "text",
+				"analyzer": "ik_max_word",
+				"fields": map[string]interface{}{
+					"keyword": map[string]interface{}{
+						"type": "keyword",
+						"ignore_above": 256,
+					},
+				},
+			},
+			"content": map[string]interface{}{
+				"type":     "text",
+				"analyzer": "ik_max_word",
+			},
+			"category": map[string]interface{}{
+				"type": "keyword",
+			},
+			"timestamp": map[string]interface{}{
+				"type": "date",
+			},
+		},
 	}
 
-	res, err := req.Do(context.Background(), client)
-	if err != nil {
-		return fmt.Errorf("failed to check index existence: %w", err)
+	// 优化的索引设置
+	settings := map[string]interface{}{
+		"index": map[string]interface{}{
+			"number_of_shards":   3,
+			"number_of_replicas": 1,
+			"refresh_interval":   "1s",
+			"analysis": map[string]interface{}{
+				"analyzer": map[string]interface{}{
+					"ik_max_word": map[string]interface{}{
+						"type":      "custom",
+						"tokenizer": "ik_max_word",
+						"filter": []string{
+							"lowercase",
+						},
+					},
+				},
+			},
+		},
 	}
-	defer res.Body.Close()
 
-	// 如果索引不存在，创建它
-	if res.StatusCode == 404 {
-		req := esapi.IndicesCreateRequest{
-			Index: index,
-		}
+	// 创建索引
+	if err := CreateIndex(context.Background(), client, index, mapping); err != nil {
+		return fmt.Errorf("failed to create index: %w", err)
+	}
 
-		res, err := req.Do(context.Background(), client)
-		if err != nil {
-			return fmt.Errorf("failed to create index: %w", err)
-		}
-		defer res.Body.Close()
-
-		if res.IsError() {
-			return fmt.Errorf("failed to create index: %s", res.Status())
-		}
+	// 更新索引设置
+	if err := UpdateSettings(context.Background(), client, index, settings); err != nil {
+		return fmt.Errorf("failed to update settings: %w", err)
 	}
 
 	return nil

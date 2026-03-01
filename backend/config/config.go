@@ -11,6 +11,7 @@ type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Elasticsearch ElasticsearchConfig `yaml:"elasticsearch"`
 	RateLimit    RateLimitConfig    `yaml:"rate_limit"`
+	Redis        RedisConfig        `yaml:"redis"`
 }
 
 type ServerConfig struct {
@@ -33,6 +34,13 @@ type GlobalRateLimitConfig struct {
 type SearchRateLimitConfig struct {
 	RPS   int `yaml:"rps"`
 	Burst int `yaml:"burst"`
+}
+
+type RedisConfig struct {
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+	TTL      int    `yaml:"ttl"` // 缓存过期时间（秒）
 }
 
 func Load() (*Config, error) {

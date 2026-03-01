@@ -24,7 +24,8 @@ type SearchResult struct {
 			Value int `json:"value"`
 		} `json:"total"`
 		Hits []struct {
-			Source json.RawMessage `json:"_source"`
+			Source    json.RawMessage          `json:"_source"`
+			Highlight map[string][]string       `json:"highlight,omitempty"`
 		} `json:"hits"`
 	} `json:"hits"`
 }

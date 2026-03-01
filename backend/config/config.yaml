@@ -11,3 +11,9 @@ rate_limit:
   search:
     rps: 50
     burst: 100
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  ttl: 3600
