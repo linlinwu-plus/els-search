@@ -1,11 +1,14 @@
 version: '3'
 
 services:
-  elasticsearch:
+  elasticsearch1:
     image: elasticsearch:8.11.0
     container_name: elasticsearch-1
     environment:
-      - discovery.type=single-node
+      - cluster.name=els-search-cluster
+      - node.name=elasticsearch-1
+      - discovery.seed_hosts=elasticsearch2,elasticsearch3
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - ELASTIC_PASSWORD=changeme
       - xpack.security.enabled=false
@@ -14,7 +17,43 @@ services:
       - "9200:9200"
       - "9300:9300"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data1:/usr/share/elasticsearch/data
+
+  elasticsearch2:
+    image: elasticsearch:8.11.0
+    container_name: elasticsearch-2
+    environment:
+      - cluster.name=els-search-cluster
+      - node.name=elasticsearch-2
+      - discovery.seed_hosts=elasticsearch1,elasticsearch3
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=changeme
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    volumes:
+      - es_data2:/usr/share/elasticsearch/data
+
+  elasticsearch3:
+    image: elasticsearch:8.11.0
+    container_name: elasticsearch-3
+    environment:
+      - cluster.name=els-search-cluster
+      - node.name=elasticsearch-3
+      - discovery.seed_hosts=elasticsearch1,elasticsearch2
+      - cluster.initial_master_nodes=elasticsearch-1,elasticsearch-2,elasticsearch-3
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=changeme
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+    volumes:
+      - es_data3:/usr/share/elasticsearch/data
 
   redis:
     image: redis:6.0
@@ -29,12 +68,14 @@ services:
     container_name: backend-1
     environment:
       - CONFIG_FILE=/app/config/config.yaml
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch1:9200,http://elasticsearch2:9200,http://elasticsearch3:9200
       - REDIS_ADDR=redis:6379
     ports:
       - "8080:8080"
     depends_on:
-      - elasticsearch
+      - elasticsearch1
+      - elasticsearch2
+      - elasticsearch3
       - redis
 
   backend2:
@@ -44,12 +85,14 @@ services:
     container_name: backend-2
     environment:
       - CONFIG_FILE=/app/config/config.yaml
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch1:9200,http://elasticsearch2:9200,http://elasticsearch3:9200
       - REDIS_ADDR=redis:6379
     ports:
       - "8081:8080"
     depends_on:
-      - elasticsearch
+      - elasticsearch1
+      - elasticsearch2
+      - elasticsearch3
       - redis
 
   backend3:
@@ -59,12 +102,14 @@ services:
     container_name: backend-3
     environment:
       - CONFIG_FILE=/app/config/config.yaml
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch1:9200,http://elasticsearch2:9200,http://elasticsearch3:9200
       - REDIS_ADDR=redis:6379
     ports:
       - "8082:8080"
     depends_on:
-      - elasticsearch
+      - elasticsearch1
+      - elasticsearch2
+      - elasticsearch3
       - redis
 
   nginx:
@@ -73,6 +118,7 @@ services:
     ports:
       - "80:80"
     volumes:
+      - ./front:/usr/share/nginx/html/front
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend1
@@ -80,4 +126,6 @@ services:
       - backend3
 
 volumes:
-  es_data:
+  es_data1:
+  es_data2:
+  es_data3:

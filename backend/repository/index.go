@@ -10,8 +10,8 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
-// CreateIndex 创建索引并设置映射
-func CreateIndex(ctx context.Context, client *elasticsearch.Client, index string, mapping map[string]interface{}) error {
+// CreateIndex 创建索引并设置映射和设置
+func CreateIndex(ctx context.Context, client *elasticsearch.Client, index string, mapping map[string]interface{}, settings map[string]interface{}) error {
 	// 检查索引是否存在
 	exists, err := IndexExists(ctx, client, index)
 	if err != nil {
@@ -27,13 +27,20 @@ func CreateIndex(ctx context.Context, client *elasticsearch.Client, index string
 		Index: index,
 	}
 
-	// 如果提供了映射，则添加到请求中
+	// 构建索引配置
+	config := make(map[string]interface{})
 	if mapping != nil {
-		data, err := json.Marshal(map[string]interface{}{
-			"mappings": mapping,
-		})
+		config["mappings"] = mapping
+	}
+	if settings != nil {
+		config["settings"] = settings
+	}
+
+	// 如果有配置，则添加到请求中
+	if len(config) > 0 {
+		data, err := json.Marshal(config)
 		if err != nil {
-			return fmt.Errorf("failed to marshal mapping: %w", err)
+			return fmt.Errorf("failed to marshal config: %w", err)
 		}
 		req.Body = bytes.NewReader(data)
 	}

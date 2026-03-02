@@ -457,7 +457,8 @@
                     // 监听搜索请求完成
                     const originalFetch = window.fetch;
                     window.fetch = function(...args) {
-                        return originalFetch.apply(this, args).then(response => {
+                        const self = this;
+                        return originalFetch.apply(self, args).then(response => {
                             if (args[0].includes('/api/search')) {
                                 const endTime = performance.now();
                                 const searchPerformance = {
@@ -465,6 +466,7 @@
                                     duration: endTime - startTime,
                                     timestamp: new Date().toISOString()
                                 };
+                                // 直接调用全局函数，避免使用 this
                                 sendPerformanceData(searchPerformance);
                             }
                             return response;

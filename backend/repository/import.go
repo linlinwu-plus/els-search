@@ -129,14 +129,9 @@ func createIndexIfNotExists(client *elasticsearch.Client, index string) error {
 		},
 	}
 
-	// 创建索引
-	if err := CreateIndex(context.Background(), client, index, mapping); err != nil {
+	// 创建索引（包含映射和设置）
+	if err := CreateIndex(context.Background(), client, index, mapping, settings); err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
-	}
-
-	// 更新索引设置
-	if err := UpdateSettings(context.Background(), client, index, settings); err != nil {
-		return fmt.Errorf("failed to update settings: %w", err)
 	}
 
 	return nil

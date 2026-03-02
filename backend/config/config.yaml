@@ -1,9 +1,11 @@
 server:
-  addr: "127.0.0.1:8080"
+  addr: "0.0.0.0:8080"
 
 elasticsearch:
   hosts:
-    - "http://localhost:9200"
+    - "http://elasticsearch1:9200"
+    - "http://elasticsearch2:9200"
+    - "http://elasticsearch3:9200"
 
 rate_limit:
   global:
@@ -13,7 +15,7 @@ rate_limit:
     burst: 100
 
 redis:
-  addr: "localhost:6379"
+  addr: "redis:6379"
   password: ""
   db: 0
   ttl: 3600
