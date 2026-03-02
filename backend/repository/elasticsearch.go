@@ -66,9 +66,14 @@ func NewESClient(hosts []string) (*elasticsearch.Client, error) {
 	cfg := elasticsearch.Config{
 		Addresses: hosts,
 		Transport: &http.Transport{
-			MaxIdleConnsPerHost: 10,
+			MaxIdleConns:        100,
+			MaxIdleConnsPerHost: 100,
+			MaxConnsPerHost:     100,
+			IdleConnTimeout:     90 * time.Second,
 			ResponseHeaderTimeout: time.Second * 30,
 		},
+		MaxRetries: 3,
+		RetryOnStatus: []int{502, 503, 504, 429},
 	}
 	return elasticsearch.NewClient(cfg)
 }

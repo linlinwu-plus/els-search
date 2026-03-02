@@ -23,6 +23,13 @@ func NewRedisCache(addr, password string, db, ttl int) Cache {
 		Addr:     addr,
 		Password: password,
 		DB:       db,
+		PoolSize: 100,
+		MinIdleConns: 50,
+		MaxRetries: 3,
+		DialTimeout: 5 * time.Second,
+		ReadTimeout: 3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		PoolTimeout: 4 * time.Second,
 	})
 
 	return &redisCache{

@@ -66,7 +66,7 @@ func (s *searchService) Search(ctx context.Context, index, query string, fields 
 		if err == nil && cachedResult != nil {
 			// 记录搜索行为
 			if s.analytics != nil {
-				s.analytics.RecordSearch(ctx, query, fields, page, size, sort, filter, time.Since(startTime).Milliseconds(), cachedResult.Hits.Total.Value)
+				go s.analytics.RecordSearch(ctx, query, fields, page, size, sort, filter, time.Since(startTime).Milliseconds(), cachedResult.Hits.Total.Value)
 			}
 			return cachedResult, nil
 		}
@@ -78,10 +78,13 @@ func (s *searchService) Search(ctx context.Context, index, query string, fields 
 			"multi_match": map[string]interface{}{
 				"query":  query,
 				"fields": fields,
+				"type":   "best_fields",
+				"tie_breaker": 0.3,
 			},
 		},
 		"from": (page - 1) * size,
 		"size": size,
+		"track_total_hits": 10000,
 	}
 
 	// 添加排序
@@ -116,10 +119,14 @@ func (s *searchService) Search(ctx context.Context, index, query string, fields 
 	if highlight {
 		esQuery["highlight"] = map[string]interface{}{
 			"fields": map[string]interface{}{
-				"*": map[string]interface{}{},
+				"title": map[string]interface{}{},
+				"content": map[string]interface{}{},
+				"desc": map[string]interface{}{},
 			},
 			"pre_tags":  []string{"<em>"},
 			"post_tags": []string{"</em>"},
+			"fragment_size": 150,
+			"number_of_fragments": 3,
 		}
 	}
 
@@ -129,14 +136,16 @@ func (s *searchService) Search(ctx context.Context, index, query string, fields 
 		return nil, err
 	}
 
-	// 存入缓存
+	// 异步存入缓存
 	if s.cache != nil {
-		_ = s.cache.Set(ctx, cacheKey, result, 3600)
+		go func() {
+			_ = s.cache.Set(ctx, cacheKey, result, 3600)
+		}()
 	}
 
-	// 记录搜索行为
+	// 异步记录搜索行为
 	if s.analytics != nil {
-		s.analytics.RecordSearch(ctx, query, fields, page, size, sort, filter, time.Since(startTime).Milliseconds(), result.Hits.Total.Value)
+		go s.analytics.RecordSearch(ctx, query, fields, page, size, sort, filter, time.Since(startTime).Milliseconds(), result.Hits.Total.Value)
 	}
 
 	return result, nil
