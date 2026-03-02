@@ -133,19 +133,20 @@ docker-compose up -d
 
 ```bash
 cd backend
-go run cmd/import.go
+go test -v repository/import_test.go
 ```
 
-### 4. 🔧 启动后端服务
+### 4. 🔧 服务状态检查
+
+查看所有服务是否正常运行：
 
 ```bash
-cd backend
-go run main.go
+docker ps
 ```
 
 ### 5. 🌐 访问搜索界面
 
-打开浏览器，访问：http://localhost:8080
+打开浏览器，访问：http://localhost
 
 ## ⚙️ 配置说明
 
@@ -155,11 +156,13 @@ go run main.go
 
 ```yaml
 server:
-  addr: "127.0.0.1:8080"
+  addr: "0.0.0.0:8080"
 
 elasticsearch:
   hosts:
-    - "http://localhost:9200"
+    - "http://elasticsearch1:9200"
+    - "http://elasticsearch2:9200"
+    - "http://elasticsearch3:9200"
 
 rate_limit:
   global:
@@ -169,7 +172,7 @@ rate_limit:
     burst: 100
 
 redis:
-  addr: "localhost:6379"
+  addr: "redis:6379"
   password: ""
   db: 0
   ttl: 3600
@@ -186,21 +189,20 @@ events {
 
 http {
     upstream backend {
-        server 127.0.0.1:8080;
-        server 127.0.0.1:8081;
-        server 127.0.0.1:8082;
+        server backend-1:8080;
+        server backend-2:8080;
+        server backend-3:8080;
     }
 
     server {
         listen 80;
         server_name localhost;
 
+        root /usr/share/nginx/html/front;
+        index index.html;
+
         location / {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
+            try_files $uri $uri/ =404;
         }
 
         location /api/ {
