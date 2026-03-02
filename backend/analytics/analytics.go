@@ -49,7 +49,7 @@ func NewRedisAnalytics(addr, password string, db int) Analytics {
 // RecordSearch 记录搜索行为
 func (a *redisAnalytics) RecordSearch(ctx context.Context, query string, fields []string, page, size int, sort, filter string, duration int64, results int) {
 	// 记录搜索次数
-	searchKey := fmt.Sprintf("analytics:search:count")
+	searchKey := "analytics:search:count"
 	a.client.Incr(ctx, searchKey)
 
 	// 记录热门查询
@@ -63,14 +63,14 @@ func (a *redisAnalytics) RecordSearch(ctx context.Context, query string, fields 
 
 	// 记录搜索详情（可选，用于更详细的分析）
 	searchDetail := map[string]interface{}{
-		"query":    query,
-		"fields":   fields,
-		"page":     page,
-		"size":     size,
-		"sort":     sort,
-		"filter":   filter,
-		"duration": duration,
-		"results":  results,
+		"query":     query,
+		"fields":    fields,
+		"page":      page,
+		"size":      size,
+		"sort":      sort,
+		"filter":    filter,
+		"duration":  duration,
+		"results":   results,
 		"timestamp": time.Now().Unix(),
 	}
 	detailData, _ := json.Marshal(searchDetail)
